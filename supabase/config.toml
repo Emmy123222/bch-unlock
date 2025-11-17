@@ -1,0 +1,7 @@
+project_id = "uqcypsanrnblufedmwvh"
+
+[functions."create-payment-session"]
+verify_jwt = false
+
+[functions."check-payment"]
+verify_jwt = false
