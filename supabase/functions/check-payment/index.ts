@@ -6,13 +6,61 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// TEST MODE: Set to true to auto-confirm payments after 10 seconds (for testing)
+const TEST_MODE = Deno.env.get('TEST_MODE') === 'true';
+
 // Check BCH blockchain using multiple APIs for reliability
-const checkBCHTransaction = async (address: string, expectedAmount: number): Promise<boolean> => {
+const checkBCHTransaction = async (address: string, expectedAmount: number, createdAt: string): Promise<boolean> => {
+  // TEST MODE: Auto-confirm after 10 seconds for testing
+  if (TEST_MODE) {
+    const createdTime = new Date(createdAt).getTime();
+    const now = Date.now();
+    const elapsedSeconds = (now - createdTime) / 1000;
+    
+    if (elapsedSeconds > 10) {
+      console.log('🧪 TEST MODE: Auto-confirming payment after 10 seconds');
+      return true;
+    }
+    console.log(`🧪 TEST MODE: Waiting ${Math.floor(10 - elapsedSeconds)} more seconds...`);
+    return false;
+  }
+
   try {
     const cleanAddress = address.replace('bitcoincash:', '');
     console.log('Checking address:', cleanAddress, 'for amount:', expectedAmount, 'BCH');
     
-    // Try multiple BCH APIs for redundancy
+    // Use blockchair.com API (more reliable in edge functions)
+    try {
+      const blockchairUrl = `https://api.blockchair.com/bitcoin-cash/dashboards/address/${cleanAddress}`;
+      console.log('Trying Blockchair API...');
+      
+      const response = await fetch(blockchairUrl, {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(8000),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Blockchair response:', JSON.stringify(data, null, 2));
+        
+        if (data?.data?.[cleanAddress]) {
+          const addressData = data.data[cleanAddress].address;
+          const balance = (addressData.balance || 0) / 100000000; // satoshis to BCH
+          const received = (addressData.received || 0) / 100000000;
+          
+          console.log(`Balance: ${balance} BCH, Total received: ${received} BCH`);
+          
+          if (received >= expectedAmount || balance >= expectedAmount) {
+            console.log('✅ Payment confirmed via Blockchair');
+            return true;
+          }
+        }
+      }
+    } catch (blockchairError) {
+      console.error('Blockchair API error:', blockchairError);
+    }
+    
+    // Fallback: Try multiple BCH APIs for redundancy
     const apis = [
       {
         name: 'Bitcoin.com REST API',
@@ -145,7 +193,7 @@ serve(async (req) => {
     }
 
     // Check blockchain for payment using real APIs
-    const isPaid = await checkBCHTransaction(address, session.amount);
+    const isPaid = await checkBCHTransaction(address, session.amount, session.created_at);
 
     // Update session if payment is confirmed
     if (isPaid) {

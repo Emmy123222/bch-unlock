@@ -2,6 +2,7 @@ import { useState } from "react";
 import LockedContent from "@/components/LockedContent";
 import UnlockedContent from "@/components/UnlockedContent";
 import PaymentModal from "@/components/PaymentModal";
+import TestModeToggle from "@/components/TestModeToggle";
 import { Coins } from "lucide-react";
 import heroImage from "@/assets/bch-hero.jpg";
 
@@ -107,6 +108,9 @@ const Index = () => {
           />
         </div>
       </main>
+
+      {/* Test Mode Toggle */}
+      <TestModeToggle />
 
       {/* Footer */}
       <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-20">
