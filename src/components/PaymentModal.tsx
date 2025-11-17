@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Loader2, CheckCircle2, Copy, ExternalLink } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, CheckCircle2, Copy, ExternalLink, QrCode, Wallet } from "lucide-react";
 import QRDisplay from "./QRDisplay";
+import WalletConnectButton from "./WalletConnectButton";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -115,28 +117,58 @@ const PaymentModal = ({ isOpen, onClose, onPaymentConfirmed, amount }: PaymentMo
             </div>
           ) : paymentStatus === "confirmed" ? (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <CheckCircle2 className="w-16 h-16 text-primary" />
+              <CheckCircle2 className="w-16 h-16 text-primary animate-pulse" />
               <p className="text-xl font-semibold text-foreground">Payment Confirmed!</p>
               <p className="text-muted-foreground">Unlocking content...</p>
             </div>
           ) : (
-            <>
-              {/* QR Code */}
-              <div className="flex justify-center">
-                <QRDisplay value={`bitcoincash:${paymentAddress}?amount=${amount}`} />
-              </div>
+            <Tabs defaultValue="wallet" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="wallet" className="flex items-center gap-2">
+                  <Wallet className="w-4 h-4" />
+                  Wallet
+                </TabsTrigger>
+                <TabsTrigger value="qr" className="flex items-center gap-2">
+                  <QrCode className="w-4 h-4" />
+                  QR Code
+                </TabsTrigger>
+              </TabsList>
 
-              {/* Amount */}
-              <div className="text-center space-y-2">
-                <p className="text-sm text-muted-foreground">Amount to Send</p>
-                <p className="text-3xl font-bold text-primary">{amount} BCH</p>
-                <p className="text-xs text-muted-foreground">
-                  ≈ ${(amount * 350).toFixed(2)} USD (estimated)
-                </p>
-              </div>
+              <TabsContent value="wallet" className="space-y-4 mt-4">
+                {/* Wallet Connect */}
+                <WalletConnectButton 
+                  paymentAddress={paymentAddress}
+                  amount={amount}
+                />
 
-              {/* Address */}
-              <div className="space-y-2">
+                {/* Amount Display */}
+                <div className="text-center space-y-2 pt-4">
+                  <p className="text-sm text-muted-foreground">Amount to Send</p>
+                  <p className="text-3xl font-bold text-primary">{amount} BCH</p>
+                  <p className="text-xs text-muted-foreground">
+                    ≈ ${(amount * 350).toFixed(2)} USD (estimated)
+                  </p>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="qr" className="space-y-4 mt-4">
+                {/* QR Code */}
+                <div className="flex justify-center">
+                  <QRDisplay value={`bitcoincash:${paymentAddress}?amount=${amount}`} />
+                </div>
+
+                {/* Amount */}
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-muted-foreground">Amount to Send</p>
+                  <p className="text-3xl font-bold text-primary">{amount} BCH</p>
+                  <p className="text-xs text-muted-foreground">
+                    ≈ ${(amount * 350).toFixed(2)} USD (estimated)
+                  </p>
+                </div>
+              </TabsContent>
+
+              {/* Address (shown in both tabs) */}
+              <div className="space-y-2 mt-4">
                 <p className="text-sm font-medium text-foreground">Payment Address</p>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 p-3 bg-muted rounded-lg font-mono text-xs break-all">
@@ -160,7 +192,7 @@ const PaymentModal = ({ isOpen, onClose, onPaymentConfirmed, amount }: PaymentMo
               </div>
 
               {/* Status */}
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-4">
                 {paymentStatus === "checking" ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -175,16 +207,16 @@ const PaymentModal = ({ isOpen, onClose, onPaymentConfirmed, amount }: PaymentMo
               </div>
 
               {/* Instructions */}
-              <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 space-y-2">
+              <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 space-y-2 mt-4">
                 <p className="text-sm font-semibold text-foreground">How to Pay:</p>
                 <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Open your BCH wallet (Bitcoin.com, Electron Cash, etc.)</li>
-                  <li>Scan the QR code or copy the address above</li>
-                  <li>Send exactly {amount} BCH</li>
+                  <li>Click "Pay with BCH Wallet" or scan the QR code</li>
+                  <li>Send exactly {amount} BCH to the address</li>
                   <li>Wait for confirmation (usually &lt; 10 seconds)</li>
+                  <li>Content unlocks automatically!</li>
                 </ol>
               </div>
-            </>
+            </Tabs>
           )}
         </div>
       </DialogContent>
