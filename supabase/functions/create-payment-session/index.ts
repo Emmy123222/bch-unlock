@@ -100,23 +100,24 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get the next address index
-    const { count } = await supabase
-      .from('payment_sessions')
-      .select('id', { count: 'exact', head: true });
+    // Use merchant's BCH address for all payments
+    const merchantAddress = Deno.env.get('MERCHANT_BCH_ADDRESS');
     
-    const nextIndex = (count || 0) + Math.floor(Math.random() * 1000);
+    if (!merchantAddress) {
+      console.error('MERCHANT_BCH_ADDRESS not configured');
+      return new Response(
+        JSON.stringify({ error: 'Payment system not configured. Please contact support.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    // Generate a unique BCH address using libauth
-    const paymentAddress = await generateBCHAddress(nextIndex);
-
-    console.log('Generated payment address:', paymentAddress);
+    console.log('Using merchant address:', merchantAddress);
 
     // Store the payment session in the database
     const { data: session, error: insertError } = await supabase
       .from('payment_sessions')
       .insert({
-        payment_address: paymentAddress,
+        payment_address: merchantAddress,
         amount: amount,
         paid: false,
       })
@@ -133,7 +134,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        paymentAddress: paymentAddress,
+        paymentAddress: merchantAddress,
         amount: amount,
         sessionId: session.id,
       }),
