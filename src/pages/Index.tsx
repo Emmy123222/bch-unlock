@@ -1,12 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import LockedContent from "@/components/LockedContent";
 import UnlockedContent from "@/components/UnlockedContent";
 import PaymentModal from "@/components/PaymentModal";
 import TestModeToggle from "@/components/TestModeToggle";
-import { Coins } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Coins, LayoutDashboard } from "lucide-react";
 import heroImage from "@/assets/bch-hero.jpg";
 
 const Index = () => {
+  const navigate = useNavigate();
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const paymentAmount = 0.0001; // BCH amount required
@@ -31,9 +34,20 @@ const Index = () => {
               </div>
               <h1 className="text-2xl font-bold text-foreground">BCH Paywall</h1>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>Powered by</span>
-              <span className="font-semibold text-primary">Bitcoin Cash</span>
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={() => navigate('/admin')}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                Dashboard
+              </Button>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>Powered by</span>
+                <span className="font-semibold text-primary">Bitcoin Cash</span>
+              </div>
             </div>
           </div>
         </div>
