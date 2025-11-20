@@ -113,6 +113,9 @@ serve(async (req) => {
 
     console.log('Using merchant address:', merchantAddress);
 
+    // Generate a unique session key for this payment
+    const sessionKey = crypto.randomUUID();
+
     // Store the payment session in the database
     const { data: session, error: insertError } = await supabase
       .from('payment_sessions')
@@ -120,6 +123,7 @@ serve(async (req) => {
         payment_address: merchantAddress,
         amount: amount,
         paid: false,
+        session_key: sessionKey,
       })
       .select()
       .single();

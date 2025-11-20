@@ -21,6 +21,7 @@ export type Database = {
           id: string
           paid: boolean
           payment_address: string
+          session_key: string | null
           transaction_id: string | null
           updated_at: string
         }
@@ -30,6 +31,7 @@ export type Database = {
           id?: string
           paid?: boolean
           payment_address: string
+          session_key?: string | null
           transaction_id?: string | null
           updated_at?: string
         }
@@ -39,6 +41,7 @@ export type Database = {
           id?: string
           paid?: boolean
           payment_address?: string
+          session_key?: string | null
           transaction_id?: string | null
           updated_at?: string
         }
