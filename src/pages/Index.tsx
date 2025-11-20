@@ -65,11 +65,10 @@ const Index = () => {
           {/* Hero Section */}
           <div className="text-center space-y-4 mb-12">
             <h2 className="text-5xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-              Micro-Payment Paywall Demo
+              Bitcoin Cash Paywall Demo
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Experience the future of content monetization with Bitcoin Cash. 
-              Pay only for what you read, instantly and with minimal fees.
+              A simple paywall system powered by Bitcoin Cash for instant micro-payments.
             </p>
           </div>
 
