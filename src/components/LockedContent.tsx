@@ -9,27 +9,17 @@ const LockedContent = ({ onUnlock }: LockedContentProps) => {
     <div className="relative min-h-[600px] rounded-2xl overflow-hidden border border-border bg-card">
       {/* Blurred Content */}
       <div className="absolute inset-0 p-12 blur-[8px] select-none pointer-events-none">
-        <h2 className="text-4xl font-bold mb-6 text-foreground">Premium Content</h2>
+        <h2 className="text-4xl font-bold mb-6 text-foreground">Your Premium Content Here</h2>
         <div className="space-y-4 text-muted-foreground">
           <p className="text-lg leading-relaxed">
-            Discover exclusive insights and advanced strategies that will transform your understanding of Bitcoin Cash technology...
+            This is where your exclusive content will appear. Replace this with your actual premium content...
           </p>
           <p className="text-lg leading-relaxed">
-            Learn about the latest developments in peer-to-peer electronic cash systems, scalability solutions, and real-world use cases...
+            Add your valuable information, articles, videos, or any content you want to monetize...
           </p>
           <p className="text-lg leading-relaxed">
-            Get access to detailed technical analysis, market trends, and expert opinions from industry leaders...
+            Users will pay with Bitcoin Cash to unlock and access this content...
           </p>
-          <div className="mt-8 p-6 bg-muted rounded-lg">
-            <h3 className="text-2xl font-semibold mb-3">What You'll Learn:</h3>
-            <ul className="space-y-2 text-base">
-              <li>• Advanced BCH transaction techniques</li>
-              <li>• Smart contract development on Bitcoin Cash</li>
-              <li>• Payment infrastructure best practices</li>
-              <li>• Security and privacy considerations</li>
-              <li>• Real-world adoption case studies</li>
-            </ul>
-          </div>
         </div>
       </div>
 
