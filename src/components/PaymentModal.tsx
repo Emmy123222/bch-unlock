@@ -16,6 +16,7 @@ interface PaymentModalProps {
 
 const PaymentModal = ({ isOpen, onClose, onPaymentConfirmed, amount }: PaymentModalProps) => {
   const [paymentAddress, setPaymentAddress] = useState<string>("");
+  const [sessionId, setSessionId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<"pending" | "checking" | "confirmed">("pending");
@@ -27,14 +28,14 @@ const PaymentModal = ({ isOpen, onClose, onPaymentConfirmed, amount }: PaymentMo
   }, [isOpen]);
 
   useEffect(() => {
-    if (paymentAddress && paymentStatus === "pending") {
+    if (sessionId && paymentStatus === "pending") {
       const interval = setInterval(() => {
         checkPaymentStatus();
       }, 4000); // Check every 4 seconds
 
       return () => clearInterval(interval);
     }
-  }, [paymentAddress, paymentStatus]);
+  }, [sessionId, paymentStatus]);
 
   const generatePaymentAddress = async () => {
     setIsLoading(true);
@@ -46,6 +47,7 @@ const PaymentModal = ({ isOpen, onClose, onPaymentConfirmed, amount }: PaymentMo
       if (error) throw error;
 
       setPaymentAddress(data.paymentAddress);
+      setSessionId(data.sessionId);
       toast.success("Payment address generated!");
     } catch (error) {
       console.error("Error generating payment address:", error);
@@ -56,14 +58,14 @@ const PaymentModal = ({ isOpen, onClose, onPaymentConfirmed, amount }: PaymentMo
   };
 
   const checkPaymentStatus = async () => {
-    if (!paymentAddress || isChecking) return;
+    if (!sessionId || isChecking) return;
 
     setIsChecking(true);
     setPaymentStatus("checking");
 
     try {
       const { data, error } = await supabase.functions.invoke("check-payment", {
-        body: { address: paymentAddress },
+        body: { sessionId },
       });
 
       if (error) throw error;

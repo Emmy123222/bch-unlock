@@ -151,11 +151,11 @@ serve(async (req) => {
   }
 
   try {
-    const { address } = await req.json();
+    const { sessionId } = await req.json();
 
-    if (!address) {
+    if (!sessionId) {
       return new Response(
-        JSON.stringify({ error: 'Address is required' }),
+        JSON.stringify({ error: 'Session ID is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -169,7 +169,7 @@ serve(async (req) => {
     const { data: session, error: fetchError } = await supabase
       .from('payment_sessions')
       .select('*')
-      .eq('payment_address', address)
+      .eq('id', sessionId)
       .single();
 
     if (fetchError || !session) {
@@ -193,7 +193,7 @@ serve(async (req) => {
     }
 
     // Check blockchain for payment using real APIs
-    const isPaid = await checkBCHTransaction(address, session.amount, session.created_at);
+    const isPaid = await checkBCHTransaction(session.payment_address, session.amount, session.created_at);
 
     // Update session if payment is confirmed
     if (isPaid) {
@@ -203,7 +203,7 @@ serve(async (req) => {
           paid: true,
           updated_at: new Date().toISOString(),
         })
-        .eq('payment_address', address);
+        .eq('id', sessionId);
 
       if (updateError) {
         console.error('Failed to update session:', updateError);
@@ -216,7 +216,7 @@ serve(async (req) => {
       JSON.stringify({ 
         paid: isPaid,
         amount: session.amount,
-        address: address,
+        address: session.payment_address,
         message: isPaid ? '🎉 Payment confirmed!' : 'Waiting for payment...',
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
