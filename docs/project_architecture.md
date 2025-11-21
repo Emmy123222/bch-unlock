@@ -7,40 +7,42 @@ graph TD
     B -->|2. Auth Check| C[Supabase Auth]
     C -->|3. Payment Required| D[Payment Flow]
     D -->|4. Generate Payment| E[Edge Function]
-    E -->|5. Create Session| F[PostgreSQL]
+    E -->|5. Create Session| F[(PostgreSQL)]
     E -->|6. Return BCH Address| B
     B -->|7. Show QR Code| A
     A -->|8. Pay with Wallet| G[BCH Network]
     H[Blockchain Listener] -->|9. Detect Payment| F
     F -->|10. Grant Access| B
 
-
     sequenceDiagram
     participant U as User
     participant F as Frontend
     participant E as Edge Function
-    participant B as BCH Network
+    participant L as Blockchain Listener
     participant D as Database
+    participant B as BCH Network
 
+    U->>F: Requests premium content
+    F->>E: createPaymentSession()
+    E->>D: Store pending payment
+    E-->>F: Return BCH address + session ID
+    F-->>U: Show QR code & amount
 
-    U->>F: Request Premium Content
-    F->>E: Create Payment Session
-    E->>D: Store Session
-    E-->>F: Return BCH Address
-    F->>U: Show Payment QR
-    U->>B: Send BCH Payment
-    B-->>D: Payment Confirmed
-    D->>F: Update UI
-    F->>U: Show Unlocked Content
+    U->>B: Sends BCH payment
+    Note over B,L: Listener monitors address
+    B-->>L: Transaction detected
+    L->>E: verifyPayment(txHash)
+    E->>D: Mark payment confirmed
 
+    Note over F,D: Realtime or polling
+    D-->>F: Payment confirmed
+    F-->>U: Unlock premium content
 
-    pie
-    title Technology Stack
+    pie title Technology Stack
     "Frontend (React/TS)" : 35
     "Supabase (Auth/DB)" : 30
     "BCH Network" : 25
-    "Edge Functions" : 10
-
+    "Edge Functions + Listener" : 10
 
     flowchart LR
     A[User Action] --> B[API Layer]
@@ -51,19 +53,17 @@ graph TD
     style A fill:#f9f,stroke:#333
     style F fill:#bbf,stroke:#333
 
-
     gantt
     title Development Timeline
     dateFormat  YYYY-MM-DD
     section Core Features
-    Authentication      :done,    des1, 2025-11-20, 7d
-    Payment Processing  :active,  des2, 2025-11-25, 10d
-    Content Protection  :         des3, 2025-12-01, 14d
+    Authentication       :done,    2025-11-15, 7d
+    Payment Processing   :active,  2025-11-25, 10d
+    Content Protection   :         2025-12-05, 14d
     section Future
-    Multi-Currency     :         des4, 2025-12-10, 14d
-    Mobile App         :         des5, 2025-12-20, 21d
-    DAO Integration    :         des6, 2026-01-10, 30d
-
+    Multi-Currency       :         2025-12-20, 14d
+    Mobile App           :         2026-01-10, 21d
+    DAO Integration      :         2026-02-10, 30d
 
     graph LR
     A[User] -->|HTTPS| B[Cloudflare]
@@ -74,7 +74,6 @@ graph TD
     F -->|Web3| G[BCH Network]
     style A fill:#9f9,stroke:#333
     style G fill:#f96,stroke:#333
-
 
     classDiagram
     class Frontend {
@@ -87,22 +86,19 @@ graph TD
         +verifyPayment()
         +updateAccess()
     }
-    class Blockchain {
-        +sendTransaction()
-        +getConfirmations()
+    class BlockchainListener {
+        +monitorAddress()
+        +notifyOnPayment()
     }
     Frontend --> EdgeFunction
-    EdgeFunction --> Blockchain
-    Blockchain --> EdgeFunction
-
+    EdgeFunction --> BlockchainListener
 
     xychart-beta
-    title "System Performance"
-    x-axis [1, 2, 3, 4, 5]
+    title "System Performance (Projected)"
+    x-axis [v1, v2, v3, v4, v5]
     y-axis "Response Time (ms)" 0 --> 1000
-    bar [500, 400, 300, 200, 100]
-    line [100, 150, 200, 250, 300]
-
+    bar [520, 410, 320, 220, 140]
+    line [120, 160, 190, 240, 280]
 
     journey
     title User Journey
@@ -117,8 +113,7 @@ graph TD
       Access Content: 5: User
       Share: 3: User
 
-
-    stateDiagram-v2
+      stateDiagram-v2
     [*] --> Idle
     Idle --> Processing: Payment Started
     Processing --> Confirmed: Success
@@ -126,9 +121,9 @@ graph TD
     Failed --> Processing: Retry
     Confirmed --> [*]
 
-
     erDiagram
     USERS ||--o{ PAYMENTS : makes
+    CONTENT ||--o{ PAYMENTS : unlocks
     USERS {
         string id PK
         string email
@@ -137,6 +132,7 @@ graph TD
     PAYMENTS {
         string id PK
         string user_id FK
+        string content_id FK
         float amount
         string status
         string tx_hash
