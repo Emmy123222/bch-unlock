@@ -14,12 +14,14 @@ graph TD
     H[Blockchain Listener] -->|9. Detect Payment| F
     F -->|10. Grant Access| B
 
+
     sequenceDiagram
     participant U as User
     participant F as Frontend
     participant E as Edge Function
     participant B as BCH Network
     participant D as Database
+
 
     U->>F: Request Premium Content
     F->>E: Create Payment Session
@@ -31,12 +33,14 @@ graph TD
     D->>F: Update UI
     F->>U: Show Unlocked Content
 
+
     pie
     title Technology Stack
     "Frontend (React/TS)" : 35
     "Supabase (Auth/DB)" : 30
     "BCH Network" : 25
     "Edge Functions" : 10
+
 
     flowchart LR
     A[User Action] --> B[API Layer]
@@ -60,6 +64,7 @@ graph TD
     Mobile App         :         des5, 2025-12-20, 21d
     DAO Integration    :         des6, 2026-01-10, 30d
 
+
     graph LR
     A[User] -->|HTTPS| B[Cloudflare]
     B -->|WAF| C[Vercel]
@@ -69,6 +74,7 @@ graph TD
     F -->|Web3| G[BCH Network]
     style A fill:#9f9,stroke:#333
     style G fill:#f96,stroke:#333
+
 
     classDiagram
     class Frontend {
@@ -88,6 +94,7 @@ graph TD
     Frontend --> EdgeFunction
     EdgeFunction --> Blockchain
     Blockchain --> EdgeFunction
+
 
     xychart-beta
     title "System Performance"
@@ -110,13 +117,15 @@ graph TD
       Access Content: 5: User
       Share: 3: User
 
-      stateDiagram-v2
+
+    stateDiagram-v2
     [*] --> Idle
     Idle --> Processing: Payment Started
     Processing --> Confirmed: Success
     Processing --> Failed: Error
     Failed --> Processing: Retry
     Confirmed --> [*]
+
 
     erDiagram
     USERS ||--o{ PAYMENTS : makes
