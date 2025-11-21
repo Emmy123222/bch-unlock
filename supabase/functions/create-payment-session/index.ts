@@ -1,158 +1,94 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import {
-  generatePrivateKey,
-  secp256k1,
-  instantiateSecp256k1,
-  encodePrivateKeyWif,
-  lockingBytecodeToCashAddress,
-  sha256,
-  ripemd160,
-} from "https://esm.sh/@bitauth/libauth@3";
+// supabase/functions/create-payment-session/index.ts
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'http://localhost:8080',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// Generate a proper BCH address using libauth with HD wallet
-const generateBCHAddress = async (index: number): Promise<string> => {
-  try {
-    // Initialize secp256k1
-    const secp = await instantiateSecp256k1();
-    
-    // Generate a unique private key for this payment session
-    // In production, derive from a master seed using BIP32
-    const privateKeyBytes = generatePrivateKey();
-    
-    // Derive public key
-    const publicKey = secp256k1.derivePublicKeyCompressed(privateKeyBytes);
-    
-    if (typeof publicKey === 'string') {
-      throw new Error('Failed to derive public key');
-    }
-    
-    // Hash the public key: SHA256 then RIPEMD160
-    const pubKeyHash = ripemd160.hash(sha256.hash(publicKey));
-    
-    // Create P2PKH locking bytecode
-    const lockingBytecode = new Uint8Array([
-      0x76, // OP_DUP
-      0xa9, // OP_HASH160
-      0x14, // Push 20 bytes
-      ...pubKeyHash,
-      0x88, // OP_EQUALVERIFY
-      0xac, // OP_CHECKSIG
-    ]);
-    
-    // Encode as CashAddress (mainnet format)
-    const addressResult = lockingBytecodeToCashAddress({
-      bytecode: lockingBytecode,
-      prefix: 'bitcoincash', // Use 'bchtest' for testnet
-    });
-    
-    if (typeof addressResult === 'string') {
-      throw new Error(addressResult);
-    }
-    
-    console.log('Generated real BCH address using libauth:', addressResult.address);
-    return addressResult.address;
-  } catch (error) {
-    console.error('Address generation error:', error);
-    // Fallback to simple address for demo
-    return generateFallbackAddress(index);
-  }
-};
-
-// Fallback address generator for testing
-const generateFallbackAddress = (index: number): string => {
-  const chars = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
-  let address = 'bitcoincash:qr';
-  
-  const seed = `${index}${Date.now()}`;
-  const hash = Array.from(seed).reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  
-  for (let i = 0; i < 40; i++) {
-    address += chars[(hash + i) % chars.length];
-  }
-  
-  return address;
-};
+  'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+  'Access-Control-Allow-Credentials': 'true'
+}
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { amount } = await req.json();
-
-    if (!amount || amount <= 0) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid amount' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Parse request body
+    const { amount } = await req.json()
+    if (!amount) {
+      throw new Error('Amount is required')
     }
 
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+    )
 
-    // Use merchant's BCH address for all payments
-    const merchantAddress = Deno.env.get('MERCHANT_BCH_ADDRESS');
+    // Generate a unique payment ID
+    const paymentId = crypto.randomUUID()
     
+    // Get merchant address from environment variables
+    const merchantAddress = Deno.env.get('MERCHANT_BCH_ADDRESS')
     if (!merchantAddress) {
-      console.error('MERCHANT_BCH_ADDRESS not configured');
-      return new Response(
-        JSON.stringify({ error: 'Payment system not configured. Please contact support.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error('Merchant BCH address not configured')
     }
 
-    console.log('Using merchant address:', merchantAddress);
-
-    // Generate a unique session key for this payment
-    const sessionKey = crypto.randomUUID();
-
-    // Store the payment session in the database
-    const { data: session, error: insertError } = await supabase
+    // Create payment session in database
+    const { data: session, error } = await supabaseClient
       .from('payment_sessions')
-      .insert({
-        payment_address: merchantAddress,
+      .insert([{
+        id: paymentId,
         amount: amount,
-        paid: false,
-        session_key: sessionKey,
-      })
+        status: 'pending',
+        merchant_address: merchantAddress,
+        created_at: new Date().toISOString()
+      }])
       .select()
-      .single();
+      .single()
 
-    if (insertError) {
-      console.error('Database insert error:', insertError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to create payment session' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    if (error) throw error
 
+    // Return success response
     return new Response(
       JSON.stringify({
-        paymentAddress: merchantAddress,
-        amount: amount,
-        sessionId: session.id,
+        success: true,
+        paymentId,
+        amount,
+        merchantAddress,
+        status: 'pending'
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json' 
+        },
+        status: 200
       }
-    );
+    )
 
   } catch (error) {
-    console.error('Error in create-payment-session:', error);
+    // Return error response
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }),
+      {
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json' 
+        },
+        status: 400
+      }
+    )
   }
-});
+})
