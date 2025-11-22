@@ -605,6 +605,17 @@ See [LICENSE](./LICENSE) file for details.
 
 ---
 
+## 🗳️ Support This Project
+
+We'd love your support in the hackathon! If you find this project valuable, please consider voting for us by sending any amount of BCH to:
+
+**BCH Address:*bitcoincash:qp2rmj8heytjrksmhnuy7y4en4je4kyjmnwg684sl8*
+
+
+![BCH QR Code](https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=bitcoincash:qp2rmj8heytjrksmhnuy7y4en4je4kyjmnwg684sl8)
+
+*Every satoshi counts as a vote! Thank you for your support!* 💜
+
 ## 🙏 Acknowledgments
 
 ### Built With
