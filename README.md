@@ -2,7 +2,6 @@
 
 A complete, production-ready Bitcoin Cash payment wall system with real blockchain integration, admin dashboard, and balance tracking.
 
-[![Built with Lovable](https://img.shields.io/badge/Built%20with-Lovable-ff69b4)](https://lovable.dev)
 [![Bitcoin Cash](https://img.shields.io/badge/Bitcoin-Cash-brightgreen)](https://bitcoincash.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
